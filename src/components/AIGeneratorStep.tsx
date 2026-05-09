@@ -1,6 +1,5 @@
 'use client';
 import { useState } from 'react';
-import { usePRDStore } from '@/store/usePRDStore';
 import ReactMarkdown from 'react-markdown';
 
 export default function AIGeneratorStep() {
@@ -8,117 +7,15 @@ export default function AIGeneratorStep() {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [generatedPRD, setGeneratedPRD] = useState('');
-  const { updateInfo, updateProblem, addFeature, updateFeature, addUserStory, updateUserStory, addTargetMetric, updateTargetMetric, updateSuccessMetrics } = usePRDStore();
+  const [error, setError] = useState('');
 
   const examples = [
-    'Website social media marketing untuk UMKM',
-    'Aplikasi mobile untuk tracking fitness dan diet',
-    'Platform e-learning untuk kursus online',
-    'Sistem inventory management untuk gudang',
-    'Aplikasi chat real-time untuk tim remote',
+    'Website social media marketing untuk UMKM dengan fitur scheduling post, analytics, dan multi-platform management',
+    'Aplikasi mobile untuk tracking fitness dan diet dengan AI recommendation dan community features',
+    'Platform e-learning untuk kursus online dengan video streaming, quiz interaktif, dan sertifikat digital',
+    'Sistem inventory management untuk gudang dengan barcode scanning, real-time tracking, dan low stock alerts',
+    'Aplikasi chat real-time untuk tim remote dengan video call, file sharing, dan task management',
   ];
-
-  const generatePRDContent = (projectData: any) => {
-    const lines = [];
-    
-    lines.push('# PRD — Product Requirements Document');
-    lines.push('');
-    lines.push('## 1. Overview');
-    lines.push('');
-    lines.push(`**Project Type:** ${projectData.type}`);
-    lines.push('');
-    lines.push(`**Project Name:** ${projectData.name}`);
-    lines.push('');
-    lines.push(`**Target Users:** ${projectData.targetUsers}`);
-    lines.push('');
-    lines.push('**Problem Statement:**');
-    lines.push(`Masalah utama yang ingin diselesaikan adalah ${projectData.painPoints.toLowerCase()}. Saat ini pengguna mengatasi masalah dengan ${projectData.currentSolutions.toLowerCase()}, namun solusi ini belum optimal. Aplikasi ini bertujuan untuk ${projectData.opportunities.toLowerCase()}.`);
-    lines.push('');
-    
-    lines.push('## 2. Requirements');
-    lines.push('Berikut adalah persyaratan tingkat tinggi untuk pengembangan sistem:');
-    lines.push('');
-    lines.push('- **Aksesibilitas:** Aplikasi harus dapat diakses melalui platform yang sesuai dengan jenis proyek.');
-    lines.push(`- **Pengguna:** Sistem dirancang untuk ${projectData.targetUsers}.`);
-    lines.push('- **Data Input:** Input data dilakukan sesuai dengan kebutuhan fitur.');
-    lines.push('- **User Experience:** Interface harus intuitif dan mudah digunakan.');
-    lines.push('- **Performance:** Sistem harus responsif dan cepat.');
-    lines.push('');
-    
-    lines.push('## 3. Core Features');
-    lines.push('Fitur-fitur kunci yang harus ada dalam versi pertama (MVP):');
-    lines.push('');
-    projectData.features.forEach((f: any, i: number) => {
-      lines.push(`${i + 1}. **${f.title}**`);
-      lines.push(`   - Priority: **${f.priority.toUpperCase()}**`);
-      lines.push(`   - ${f.desc}`);
-    });
-    lines.push('');
-    
-    lines.push('## 4. User Flow');
-    lines.push('Alur kerja pengguna saat menggunakan aplikasi:');
-    lines.push('');
-    projectData.stories.forEach((s: any, i: number) => {
-      lines.push(`${i + 1}. **${s.asA}:** ${s.iWant}, sehingga ${s.soThat}.`);
-    });
-    lines.push('');
-    
-    lines.push('## 5. Architecture');
-    lines.push('Berikut adalah gambaran arsitektur sistem dan aliran data:');
-    lines.push('');
-    lines.push('```mermaid');
-    lines.push('sequenceDiagram');
-    lines.push('    participant User as User (Client)');
-    lines.push('    participant UI as Frontend');
-    lines.push('    participant Server as Backend');
-    lines.push('    participant DB as Database');
-    lines.push('');
-    lines.push('    User->>UI: Akses Aplikasi');
-    lines.push('    UI->>Server: Request Data');
-    lines.push('    Server->>DB: Query Database');
-    lines.push('    DB-->>Server: Return Data');
-    lines.push('    Server-->>UI: Send Response');
-    lines.push('    UI-->>User: Display Content');
-    lines.push('```');
-    lines.push('');
-    
-    lines.push('## 6. Technical Specifications');
-    lines.push('');
-    lines.push('**Performance Metrics:**');
-    lines.push('');
-    lines.push('| Metric | Target |');
-    lines.push('|--------|--------|');
-    projectData.metrics.forEach((m: any) => {
-      lines.push(`| ${m.metric} | ${m.target} |`);
-    });
-    lines.push('');
-    lines.push('**Success Criteria:**');
-    lines.push('');
-    lines.push(projectData.successCriteria);
-    lines.push('');
-    
-    lines.push('## 7. Design & Technical Constraints');
-    lines.push('Bagian ini mengatur batasan teknis dan panduan desain yang harus dipatuhi:');
-    lines.push('');
-    lines.push('1. **High-Level Technology:**');
-    lines.push('   Sistem harus dibangun menggunakan teknologi modern yang mendukung pengembangan cepat (rapid development) dan kemudahan pemeliharaan (maintainability).');
-    lines.push('');
-    lines.push('2. **Code Quality:**');
-    lines.push('   - Kode harus mengikuti best practices dan coding standards');
-    lines.push('   - Implementasi harus modular dan mudah di-maintain');
-    lines.push('   - Testing coverage minimal 80% untuk critical features');
-    lines.push('');
-    lines.push('3. **Security:**');
-    lines.push('   - Implementasi authentication dan authorization yang proper');
-    lines.push('   - Data sensitif harus dienkripsi');
-    lines.push('   - Input validation untuk mencegah injection attacks');
-    lines.push('');
-    lines.push('---');
-    lines.push('');
-    lines.push('*Generated by AI PRD Generator*');
-    
-    return lines.join('\n');
-  };
 
   const generatePRD = async () => {
     if (!prompt.trim()) {
@@ -127,58 +24,30 @@ export default function AIGeneratorStep() {
     }
 
     setLoading(true);
+    setError('');
 
-    setTimeout(() => {
-      const lowerPrompt = prompt.toLowerCase();
-      
-      let projectType = 'Web App';
-      if (lowerPrompt.includes('mobile') || lowerPrompt.includes('android') || lowerPrompt.includes('ios')) {
-        projectType = 'Android App';
-      } else if (lowerPrompt.includes('api') || lowerPrompt.includes('backend')) {
-        projectType = 'API/Backend';
-      } else if (lowerPrompt.includes('desktop')) {
-        projectType = 'Desktop App';
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate PRD');
       }
 
-      const projectData = {
-        type: projectType,
-        name: prompt,
-        targetUsers: 'End users yang membutuhkan solusi digital',
-        painPoints: 'kesulitan dalam mengelola dan mengorganisir proses secara efisien',
-        currentSolutions: 'cara manual atau tools yang tidak terintegrasi',
-        opportunities: 'menyediakan solusi terintegrasi yang meningkatkan produktivitas dan efisiensi',
-        features: [
-          { title: 'Authentication & Authorization', desc: 'Sistem login yang aman dengan role-based access control', priority: 'high' },
-          { title: 'Dashboard Analytics', desc: 'Dashboard interaktif dengan visualisasi data real-time', priority: 'high' },
-          { title: 'User Management', desc: 'Kelola profil user, permissions, dan preferences', priority: 'high' },
-          { title: 'Data Management', desc: 'CRUD operations untuk mengelola data utama', priority: 'high' },
-          { title: 'Notifications', desc: 'Push notifications dan email alerts untuk update penting', priority: 'medium' },
-          { title: 'Reporting', desc: 'Generate laporan dalam berbagai format (PDF, Excel)', priority: 'medium' },
-          { title: 'Search & Filter', desc: 'Pencarian advanced dengan multiple filters', priority: 'medium' },
-          { title: 'Settings', desc: 'Konfigurasi sistem dan user preferences', priority: 'low' },
-        ],
-        stories: [
-          { asA: 'User', iWant: 'register dan login dengan mudah', soThat: 'bisa mengakses aplikasi dengan aman' },
-          { asA: 'User', iWant: 'melihat dashboard dengan data terkini', soThat: 'bisa monitor aktivitas secara real-time' },
-          { asA: 'User', iWant: 'mengelola data dengan mudah', soThat: 'bisa melakukan operasi CRUD dengan efisien' },
-          { asA: 'Admin', iWant: 'manage users dan permissions', soThat: 'bisa kontrol akses sistem dengan proper' },
-          { asA: 'User', iWant: 'mendapat notifikasi untuk update penting', soThat: 'tidak ketinggalan informasi krusial' },
-        ],
-        metrics: [
-          { metric: 'Page Load Time', target: '< 2 detik' },
-          { metric: 'API Response Time', target: '< 500ms' },
-          { metric: 'System Uptime', target: '> 99.5%' },
-          { metric: 'Test Coverage', target: '> 80%' },
-          { metric: 'User Satisfaction', target: '> 4.5/5' },
-        ],
-        successCriteria: 'Project selesai tepat waktu dengan semua core features berfungsi dengan baik, test coverage mencapai target, dan user acceptance testing (UAT) passed.',
-      };
-
-      const prdContent = generatePRDContent(projectData);
-      setGeneratedPRD(prdContent);
-      setLoading(false);
+      const data = await response.json();
+      setGeneratedPRD(data.prd);
       setShowModal(true);
-    }, 2000);
+    } catch (err: any) {
+      setError(err.message || 'Terjadi kesalahan saat generate PRD');
+      alert('Error: ' + (err.message || 'Terjadi kesalahan'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDownload = () => {
@@ -212,29 +81,29 @@ export default function AIGeneratorStep() {
               </svg>
             </div>
             <h1 className="text-4xl font-bold text-gray-900 mb-3">AI PRD Generator</h1>
-            <p className="text-lg text-gray-600">Deskripsikan ide project Anda, AI akan generate PRD lengkap</p>
+            <p className="text-lg text-gray-600">Powered by Sambanova AI - Generate PRD profesional secara otomatis</p>
           </div>
 
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-6">
             <label className="block text-sm font-semibold text-gray-700 mb-3">
-              Deskripsi Project
+              Deskripsi Project <span className="text-red-500">*</span>
             </label>
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Contoh: Website social media marketing untuk membantu UMKM mengelola konten dan campaign di berbagai platform..."
-              rows={6}
+              placeholder="Jelaskan project Anda secara detail. Semakin detail, semakin baik hasil PRD yang dihasilkan...\n\nContoh: Website social media marketing untuk membantu UMKM mengelola konten dan campaign di berbagai platform seperti Instagram, Facebook, dan TikTok. Fitur utama termasuk scheduling post, analytics dashboard, content calendar, dan AI-powered caption generator."
+              rows={8}
               className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400 resize-none"
             />
 
             <div className="mt-6">
-              <p className="text-sm font-semibold text-gray-700 mb-3">Contoh Prompt:</p>
-              <div className="flex flex-wrap gap-2">
+              <p className="text-sm font-semibold text-gray-700 mb-3">💡 Contoh Prompt:</p>
+              <div className="space-y-2">
                 {examples.map((ex, i) => (
                   <button
                     key={i}
                     onClick={() => setPrompt(ex)}
-                    className="px-3 py-2 bg-blue-50 text-blue-700 text-sm rounded-lg hover:bg-blue-100 transition-colors border border-blue-200"
+                    className="w-full text-left px-4 py-3 bg-blue-50 text-blue-700 text-sm rounded-lg hover:bg-blue-100 transition-colors border border-blue-200"
                   >
                     {ex}
                   </button>
@@ -244,13 +113,13 @@ export default function AIGeneratorStep() {
 
             <button
               onClick={generatePRD}
-              disabled={loading}
+              disabled={loading || !prompt.trim()}
               className="w-full mt-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
             >
               {loading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Generating PRD...
+                  AI sedang menganalisis dan membuat PRD...
                 </>
               ) : (
                 <>
@@ -261,15 +130,24 @@ export default function AIGeneratorStep() {
                 </>
               )}
             </button>
+
+            {error && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                ⚠️ {error}
+              </div>
+            )}
           </div>
 
-          <div className="text-center">
+          <div className="text-center space-y-3">
             <a
               href="/wizard"
-              className="text-gray-500 hover:text-gray-700 text-sm font-medium"
+              className="text-gray-500 hover:text-gray-700 text-sm font-medium block"
             >
               Atau isi manual step-by-step →
             </a>
+            <p className="text-xs text-gray-400">
+              Powered by Sambanova AI (Meta-Llama-3.1-405B-Instruct)
+            </p>
           </div>
         </div>
       </div>
@@ -287,7 +165,7 @@ export default function AIGeneratorStep() {
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">PRD Generated</h2>
+                  <h2 className="text-xl font-bold text-gray-900">PRD Generated by AI</h2>
                   <p className="text-xs text-gray-500">Review dan download PRD Anda</p>
                 </div>
               </div>
