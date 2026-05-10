@@ -27,13 +27,20 @@ export default function AIGeneratorStep() {
     setError('');
 
     try {
+      // Increase timeout to 2 minutes
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000);
+
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ prompt }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error('Failed to generate PRD');
@@ -43,7 +50,11 @@ export default function AIGeneratorStep() {
       setGeneratedPRD(data.prd);
       setShowModal(true);
     } catch (err: any) {
-      setError(err.message || 'Terjadi kesalahan saat generate PRD');
+      if (err.name === 'AbortError') {
+        setError('Request timeout - AI membutuhkan waktu terlalu lama. Coba dengan deskripsi yang lebih singkat.');
+      } else {
+        setError(err.message || 'Terjadi kesalahan saat generate PRD');
+      }
       alert('Error: ' + (err.message || 'Terjadi kesalahan'));
     } finally {
       setLoading(false);
@@ -81,7 +92,7 @@ export default function AIGeneratorStep() {
               </svg>
             </div>
             <h1 className="text-4xl font-bold text-gray-900 mb-3">AI PRD Generator</h1>
-            <p className="text-lg text-gray-600">Powered by Sambanova AI - Generate PRD profesional secara otomatis</p>
+            <p className="text-lg text-gray-600">Powered by Sambanova AI - Generate PRD profesional dengan mermaid diagrams</p>
           </div>
 
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-6">
@@ -119,7 +130,7 @@ export default function AIGeneratorStep() {
               {loading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  AI sedang menganalisis dan membuat PRD...
+                  AI sedang membuat PRD detail dengan diagrams... (10-15 detik)
                 </>
               ) : (
                 <>
@@ -146,7 +157,7 @@ export default function AIGeneratorStep() {
               Atau isi manual step-by-step →
             </a>
             <p className="text-xs text-gray-400">
-              Powered by Sambanova AI (Meta-Llama-3.1-405B-Instruct)
+              Powered by Sambanova AI (Meta-Llama-3.3-70B-Instruct)
             </p>
           </div>
         </div>
