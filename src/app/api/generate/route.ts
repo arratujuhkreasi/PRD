@@ -1,119 +1,92 @@
-import OpenAI from 'openai';
 import { NextResponse } from 'next/server';
 
-const client = new OpenAI({
-  apiKey: process.env.SAMBANOVA_API_KEY || '71aea63d-9af0-4944-8f25-98aab3f96033',
-  baseURL: 'https://api.sambanova.ai/v1',
-});
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const maxDuration = 300;
 
 export async function POST(request: Request) {
   try {
-    const { prompt } = await request.json();
+    const body = await request.json();
+    const { prompt } = body;
 
-    if (!prompt) {
-      return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
+    if (!prompt || typeof prompt !== 'string') {
+      return NextResponse.json({ error: 'Valid prompt is required' }, { status: 400 });
     }
 
-    const systemPrompt = `Anda adalah AI expert dalam membuat Product Requirements Document (PRD) yang profesional dan detail.
+    const apiKey = '71aea63d-9af0-4944-8f25-98aab3f96033';
 
-Tugas Anda:
-1. Analisis deskripsi project yang diberikan user secara mendalam
-2. Generate PRD lengkap dengan format yang sudah ditentukan
-3. Sesuaikan tech stack, arsitektur, dan desain berdasarkan jenis project
-4. Berikan rekomendasi yang spesifik dan praktis
-5. Gunakan bahasa Indonesia yang profesional
-6. Buat PRD yang UNIK untuk setiap project, jangan gunakan template generic!
+    const systemPrompt = `Anda adalah AI expert dalam membuat Product Requirements Document (PRD) profesional.
 
-Format PRD yang harus diikuti:
+Generate PRD dengan format:
 
 # PRD — Product Requirements Document
 
 ## 1. Overview
-[Jelaskan project secara detail: tujuan utama, masalah yang diselesaikan, target users spesifik, dan value proposition]
+[Jelaskan tujuan, masalah, dan target users]
 
 ## 2. Requirements
-[List persyaratan tingkat tinggi dengan bullet points yang spesifik untuk project ini]
-- **Aksesibilitas:** [Sesuaikan dengan jenis project]
-- **Pengguna:** [Jelaskan target user secara spesifik]
-- **Data Input:** [Sesuaikan dengan kebutuhan]
-- **User Experience:** [Requirement UX yang spesifik]
-- [Tambahkan requirement lain yang relevan]
+[Bullet points persyaratan spesifik]
 
 ## 3. Core Features
-[Numbered list fitur-fitur utama dengan deskripsi detail dan priority level]
-1. **[Nama Fitur]**
-   - Priority: **HIGH/MEDIUM/LOW**
-   - [Deskripsi detail fitur]
+[List 5-8 fitur utama dengan priority HIGH/MEDIUM/LOW]
 
 ## 4. User Flow
-[Jelaskan alur pengguna step-by-step secara naratif dan detail]
+[Alur pengguna step-by-step]
 
 ## 5. Architecture
-[Jelaskan arsitektur sistem yang SPESIFIK untuk project ini]
-- **Tech Stack Recommendation:**
-  - Frontend: [Sesuaikan: Next.js, React, Vue, Flutter, React Native, dll]
-  - Backend: [Sesuaikan: Node.js, Python, Go, dll]
-  - Database: [Sesuaikan: PostgreSQL, MongoDB, Redis, dll]
-  - Infrastructure: [Cloud provider, hosting, dll]
-- **Alasan Pemilihan:** [Jelaskan kenapa tech stack ini cocok]
+[Tech stack recommendation dan arsitektur]
 
-[Sertakan mermaid sequence diagram jika relevan]
+## 6. Technical Specifications
+[Performance metrics dan security]
 
-## 6. Database Schema
-[Jika project membutuhkan database, jelaskan struktur tabel dan relasi yang SPESIFIK]
-[Sertakan mermaid ERD diagram]
+## 7. Design & Technical Constraints
+[Guidelines teknis]
 
-## 7. Technical Specifications
-**Performance Metrics:**
-| Metric | Target |
-|--------|--------|
-[Sesuaikan dengan jenis project]
+Buat PRD yang spesifik dan actionable!`;
 
-**API Endpoints:** [Jika ada]
-**Security Considerations:** [Spesifik untuk project ini]
+    console.log('Calling Sambanova API...');
 
-## 8. Design & Technical Constraints
-1. **High-Level Technology:**
-   [Jelaskan constraint teknologi yang spesifik]
-
-2. **Typography Rules:** [Jika relevan]
-   - Sans: [Font recommendation]
-   - Serif: [Font recommendation]
-   - Mono: [Font recommendation]
-
-3. **UI/UX Guidelines:** [Spesifik untuk project]
-
-4. **Security & Compliance:** [Requirement keamanan]
-
-Penting:
-- Analisis jenis project (Web, Mobile, Desktop, API, IoT, dll) dan sesuaikan semua rekomendasi
-- Untuk e-commerce: fokus pada payment gateway, inventory, shipping
-- Untuk social media: fokus pada real-time features, content moderation, engagement
-- Untuk enterprise: fokus pada scalability, security, compliance
-- Untuk mobile: fokus pada offline-first, push notifications, performance
-- Berikan estimasi kompleksitas dan timeline jika relevan
-- Sertakan mermaid diagram yang relevan (sequence, ERD, flowchart)
-- Jelaskan security best practices yang spesifik
-- Berikan rekomendasi third-party services yang cocok (payment, auth, storage, dll)`;
-
-    const completion = await client.chat.completions.create({
-      model: 'Meta-Llama-3.1-405B-Instruct',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { 
-          role: 'user', 
-          content: `Generate PRD lengkap dan detail untuk project berikut. Pastikan PRD ini unik dan spesifik sesuai dengan kebutuhan project:\n\n${prompt}\n\nBuat PRD yang profesional, detail, dan actionable. Sertakan tech stack recommendation yang spesifik, database schema jika diperlukan, dan mermaid diagram yang relevan.` 
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 8000,
+    const apiResponse = await fetch('https://api.sambanova.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'Meta-Llama-3.3-70B-Instruct',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Generate PRD lengkap untuk project: ${prompt}` },
+        ],
+        temperature: 0.7,
+        max_tokens: 2500,
+      }),
     });
 
-    const generatedPRD = completion.choices[0]?.message?.content || '';
+    if (!apiResponse.ok) {
+      const errorText = await apiResponse.text();
+      console.error('Sambanova API Error:', errorText);
+      return NextResponse.json(
+        { error: 'Sambanova API error', details: errorText },
+        { status: apiResponse.status }
+      );
+    }
 
+    const data = await apiResponse.json();
+    const generatedPRD = data.choices?.[0]?.message?.content;
+
+    if (!generatedPRD) {
+      return NextResponse.json(
+        { error: 'No content generated' },
+        { status: 500 }
+      );
+    }
+
+    console.log('PRD generated successfully');
     return NextResponse.json({ prd: generatedPRD });
+    
   } catch (error: any) {
-    console.error('Error generating PRD:', error);
+    console.error('Error:', error.message);
     return NextResponse.json(
       { error: 'Failed to generate PRD', details: error.message },
       { status: 500 }
